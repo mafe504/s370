@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leading Self: The Kintsugi Journey</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0f0f0f;
+            color: #e5e5e5;
+            overflow-x: hidden;
+        }
+        .font-serif {
+            font-family: 'Cormorant Garmond', serif;
+        }
+        .text-gold {
+            color: #d4af37;
+        }
+        .bg-gold {
+            background-color: #d4af37;
+        }
+        .border-gold {
+            border-color: #d4af37;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+            will-change: opacity, visibility;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: none;
+        }
+
+        .gold-glow {
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+        
+        .image-card {
+            transition: all 0.5s ease;
+        }
+        .image-card:hover {
+            transform: scale(1.02);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icon Components ---
+        const ArrowDown = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+        );
+
+        const Heart = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        );
+
+        const Sparkles = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"></path>
+                <path d="M5 3v4"></path>
+                <path d="M3 5h4"></path>
+                <path d="M18 13v4"></path>
+                <path d="M16 15h4"></path>
+            </svg>
+        );
+
+        const X = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const Quote = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path>
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path>
+            </svg>
+        );
+
+        // --- Configuration: Images (Local) ---
+        // Ensure these photos are in the same folder as this HTML file
+        const images = {
+            '1.jpg': '1.jpg',
+            '2.jpg': '2.jpg',
+            '2.1.jpg': '2.1.jpg',
+            '3.1.jpg': '3.1.jpg',
+            '4.jpg': '4.jpg',
+            '5.jpg': '5.jpg',
+            '6.jpg': '6.jpg',
+            '7.jpg': '7.jpg',
+            '7.1.jpg': '7.1.jpg',
+            '7.3.jpg': '7.3.jpg',
+            '8.jpg': '8.jpg',
+            '9.jpg': '9.jpg',
+            '10.jpg': '10.jpg'
+        };
+
+        const storyStages = [
+            {
+                id: 'shatter',
+                title: 'The Shattering',
+                subtitle: 'Cambridge, MA',
+                text: "It was my best first plate here in Cambridge. A symbol of my new life as a Harvard student, 5,370 miles from home. Then, it fell. We often fear the break. We look at the shards of our lives and see failure.",
+                images: [images['1.jpg'], images['2.jpg'], images['2.1.jpg']],
+                layout: 'scattered'
+            },
+            {
+                id: 'repair',
+                title: 'The Repair',
+                subtitle: 'The Art of Kintsugi',
+                text: "I didn't throw the pieces away. I chose Kintsugi—fixing broken pottery with gold. This process requires patience. Holding pieces together until they are strong enough to stand on their own.",
+                images: [images['3.1.jpg'], images['4.jpg'], images['5.jpg'], images['6.jpg']],
+                layout: 'grid'
+            },
+            {
+                id: 'gold',
+                title: 'The Metaphor',
+                subtitle: 'Where the Gold Lies',
+                text: "We do not hide our cracks; we highlight them with gold. The gold is not just glue; it is self-love and compassion. My scars are not failures.",
+                images: [images['7.jpg'], images['7.1.jpg'], images['9.jpg']],
+                layout: 'focus'
+            },
+            {
+                id: 'lesson',
+                title: 'Leading Self',
+                subtitle: 'Writing the Truth',
+                text: "To be a good leader to others, one must heal oneself first. I wrote my journey on the mended surface: 'La Tahzan' (Do not grieve). Wellness. Strength. Resilience.",
+                images: [images['7.3.jpg'], images['8.jpg']],
+                layout: 'focus'
+            },
+            {
+                id: 'illumination',
+                title: 'Transformation',
+                subtitle: 'The Light Within',
+                text: "The plate is now stronger than when it was whole. It has a story. The cracks allow the light to shine through.",
+                images: [images['10.jpg']],
+                layout: 'hero'
+            }
+        ];
+
+        // --- Components ---
+
+        const FadeInSection = ({ children }) => {
+            const domRef = useRef();
+            const [isVisible, setVisible] = useState(false);
+
+            useEffect(() => {
+                const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => setVisible(entry.isIntersecting));
+                });
+                const current = domRef.current;
+                observer.observe(current);
+                return () => observer.unobserve(current);
+            }, []);
+
+            return (
+                <div ref={domRef} className={`fade-in-section ${isVisible ? 'is-visible' : ''}`}>
+                    {children}
+                </div>
+            );
+        };
+
+        const Modal = ({ src, onClose }) => {
+            if (!src) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4" onClick={onClose}>
+                    <button className="absolute top-5 right-5 text-white hover:text-gold transition">
+                        <X size={40} />
+                    </button>
+                    <img src={src} className="max-h-[90vh] max-w-full rounded shadow-2xl border-2 border-gold/30" alt="Full size" />
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeImage, setActiveImage] = useState(null);
+            const [scrolled, setScrolled] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 50);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // Helper to render images based on layout type
+            const renderImages = (stage) => {
+                if (stage.layout === 'scattered') {
+                    return (
+                        <div className="relative h-96 w-full md:w-1/2 mx-auto">
+                            {stage.images.map((img, idx) => (
+                                <div 
+                                    key={idx}
+                                    className="absolute cursor-pointer hover:z-50 transition-all duration-500 hover:scale-110 image-card"
+                                    style={{
+                                        top: `${idx * 20}%`,
+                                        left: `${idx * 25}%`,
+                                        transform: `rotate(${idx % 2 === 0 ? '6deg' : '-6deg'})`
+                                    }}
+                                    onClick={() => setActiveImage(img)}
+                                >
+                                    <img 
+                                        src={img} 
+                                        alt="Broken piece" 
+                                        className="w-48 md:w-64 rounded-sm shadow-xl border border-white/10"
+                                        onError={(e) => {e.target.style.display='none'; e.target.parentElement.innerHTML = `<div class='text-red-500 text-xs p-2 bg-black'>Image not found</div>`}}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+                
+                if (stage.layout === 'grid') {
+                    return (
+                        <div className="grid grid-cols-2 gap-4">
+                            {stage.images.map((img, idx) => (
+                                <div key={idx} className="overflow-hidden rounded-lg cursor-pointer image-card" onClick={() => setActiveImage(img)}>
+                                    <img src={img} className="w-full h-48 object-cover opacity-80 hover:opacity-100 transition" alt="Process" />
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+
+                if (stage.layout === 'single' || stage.layout === 'focus') {
+                    return (
+                        <div className="flex justify-center gap-6 flex-wrap">
+                            {stage.images.map((img, idx) => (
+                                <div key={idx} className="cursor-pointer image-card" onClick={() => setActiveImage(img)}>
+                                    <img src={img} className="max-w-full md:max-w-md rounded-lg shadow-2xl border border-gold/20" alt="Focus" />
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+                
+                return null; // Hero handled separately
+            };
+
+            return (
+                <div className="min-h-screen">
+                    {/* Navigation */}
+                    <nav className={`fixed top-0 w-full z-40 transition-all duration-500 ${scrolled ? 'bg-black/90 py-4 border-b border-gold/20' : 'bg-transparent py-8'}`}>
+                        <div className="container mx-auto px-6 flex justify-between items-center">
+                            <div className="text-gold font-serif text-2xl tracking-widest uppercase font-bold">Musa Abu Hadeed</div>
+                            <div className="hidden md:flex space-x-8 text-sm tracking-widest uppercase text-gray-400">
+                                <span>Wellness</span>
+                                <span>Strength</span>
+                                <span className="text-white">Resilience</span>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Hero Section */}
+                    <header className="relative h-screen flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 z-0">
+                            <img src={images['10.jpg']} className="w-full h-full object-cover opacity-60" alt="Hero Background" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-[#0f0f0f]"></div>
+                        </div>
+                        
+                        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-20">
+                            <h2 className="text-gold uppercase tracking-[0.3em] text-sm md:text-base mb-4 animate-pulse">The Art of Healing</h2>
+                            <h1 className="font-serif text-5xl md:text-8xl text-white mb-8 gold-glow leading-tight">
+                                Leading Self
+                            </h1>
+                            <p className="text-gray-300 text-lg md:text-xl font-light max-w-2xl mx-auto leading-relaxed">
+                                "To be a good leader to others, one must heal oneself first."
+                            </p>
+                            <div className="mt-12 animate-bounce text-gold/50 flex justify-center">
+                                <ArrowDown size={32} />
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Quote Section */}
+                    <section className="py-24 bg-[#0f0f0f]">
+                        <div className="container mx-auto px-6">
+                            <FadeInSection>
+                                <div className="max-w-3xl mx-auto text-center relative">
+                                    <div className="absolute -top-8 -left-8 text-gold/20">
+                                        <Quote size={64} />
+                                    </div>
+                                    <h3 className="font-serif text-3xl md:text-4xl leading-relaxed text-gray-200">
+                                        "Never a failure, always a lesson."
+                                    </h3>
+                                    <p className="mt-6 text-gold font-medium tracking-wide">— Adrienne Maree Brown</p>
+                                </div>
+                            </FadeInSection>
+                        </div>
+                    </section>
+
+                    {/* Story Stages */}
+                    <div className="space-y-32 pb-32">
+                        {storyStages.map((stage, index) => (
+                            stage.layout !== 'hero' && (
+                                <section key={stage.id} className="container mx-auto px-6">
+                                    <FadeInSection>
+                                        <div className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-12`}>
+                                            
+                                            {/* Text Content */}
+                                            <div className="flex-1 space-y-6">
+                                                <div className="flex items-center gap-3 text-gold/80 text-sm uppercase tracking-widest font-semibold">
+                                                    <span className="w-8 h-[1px] bg-gold"></span>
+                                                    {stage.subtitle}
+                                                </div>
+                                                <h2 className="font-serif text-4xl md:text-5xl text-white">{stage.title}</h2>
+                                                <p className="text-gray-400 text-lg leading-relaxed font-light">
+                                                    {stage.text}
+                                                </p>
+                                                {stage.id === 'gold' && (
+                                                    <div className="inline-flex items-center gap-2 text-gold border border-gold/30 px-6 py-3 rounded-full mt-4">
+                                                        <Sparkles size={18} />
+                                                        <span>Highlight your cracks</span>
+                                                    </div>
+                                                )}
+                                                {stage.id === 'lesson' && (
+                                                    <div className="inline-flex items-center gap-2 text-white bg-gold/10 px-6 py-3 rounded-full mt-4">
+                                                        <Heart size={18} className="text-gold" />
+                                                        <span>Self-Love & Compassion</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Image Content */}
+                                            <div className="flex-1 w-full">
+                                                {renderImages(stage)}
+                                            </div>
+                                        </div>
+                                    </FadeInSection>
+                                </section>
+                            )
+                        ))}
+                    </div>
+
+                    {/* Interactive Footer / Call to Action */}
+                    <footer className="bg-neutral-900 border-t border-white/5 py-20 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold to-transparent opacity-50"></div>
+                        <div className="container mx-auto px-6 text-center relative z-10">
+                            <FadeInSection>
+                                <h2 className="font-serif text-4xl mb-6">Transformation</h2>
+                                <p className="text-gray-400 max-w-xl mx-auto mb-10">
+                                    My scars and struggles are not failures; they are where the gold lies.
+                                    Thank you for witnessing this journey.
+                                </p>
+                                <div className="text-sm text-gray-600 uppercase tracking-widest">
+                                    Harvard Graduate School of Education • 2025
+                                </div>
+                            </FadeInSection>
+                        </div>
+                    </footer>
+
+                    {/* Lightbox Modal */}
+                    {activeImage && <Modal src={activeImage} onClose={() => setActiveImage(null)} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
