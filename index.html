@@ -69,12 +69,52 @@
         }
         
         .image-card {
-            transition: all 0.5s ease;
+            transition: transform 0.6s cubic-bezier(.19,1,.22,1), box-shadow 0.4s ease, filter 0.4s ease;
         }
         .image-card:hover {
-            transform: scale(1.02);
+            transform: translateY(-6px) scale(1.035) rotate3d(1,0,0,6deg);
             z-index: 10;
+            box-shadow: 0 12px 32px -8px rgba(212,175,55,0.25), 0 4px 12px -4px rgba(0,0,0,0.6);
+            filter: saturate(1.15) brightness(1.05);
         }
+
+        /* Magic shimmer overlay */
+        .magic-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .magic-shimmer::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, rgba(212,175,55,0.0) 35%, rgba(212,175,55,0.15) 50%, rgba(212,175,55,0.0) 65%);
+            transform: translateX(-60%) skewX(-18deg);
+            animation: shimmer 6s infinite;
+            pointer-events: none;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-60%) skewX(-18deg); }
+            55% { transform: translateX(140%) skewX(-18deg); }
+            100% { transform: translateX(140%) skewX(-18deg); }
+        }
+
+        /* Subtle breathing glow for gold accents */
+        .gold-glow-breathe {
+            animation: breathe 5.5s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { text-shadow: 0 0 6px rgba(212,175,55,0.35); }
+            50% { text-shadow: 0 0 16px rgba(212,175,55,0.6); }
+        }
+
+        /* Parallax hero image container */
+        .hero-bg-wrapper img { will-change: transform; transition: transform 0.15s linear; }
+
+        /* Responsive sizing helpers */
+        .img-shadow-base { box-shadow: 0 4px 16px -4px rgba(0,0,0,0.5); }
+        .img-border-gold { border: 1px solid rgba(212,175,55,0.25); }
+        .aspect-portrait { aspect-ratio: 3/4; object-fit: cover; }
+        .aspect-landscape { aspect-ratio: 4/3; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -122,21 +162,39 @@
         );
 
         // --- Configuration: Images (Local) ---
-        // Ensure these photos are in the same folder as this HTML file
+        // Uses locally stored images in the `images/` folder (same level as this HTML file).
+        // Ensure the files exist (see `images/README.txt` for guidance).
         const images = {
-            '1.jpg': '1.jpg',
-            '2.jpg': '2.jpg',
-            '2.1.jpg': '2.1.jpg',
-            '3.1.jpg': '3.1.jpg',
-            '4.jpg': '4.jpg',
-            '5.jpg': '5.jpg',
-            '6.jpg': '6.jpg',
-            '7.jpg': '7.jpg',
-            '7.1.jpg': '7.1.jpg',
-            '7.3.jpg': '7.3.jpg',
-            '8.jpg': '8.jpg',
-            '9.jpg': '9.jpg',
-            '10.jpg': '10.jpg'
+            '1.jpg': 'images/1.jpg',
+            '2.jpg': 'images/2.jpg',
+            '2.1.jpg': 'images/2.1.jpg',
+            '3.1.jpg': 'images/3.1.jpg',
+            '4.jpg': 'images/4.jpg',
+            '5.jpg': 'images/5.jpg',
+            '6.jpg': 'images/6.jpg',
+            '7.jpg': 'images/7.jpg',
+            '7.1.jpg': 'images/7.1.jpg',
+            '7.3.jpg': 'images/7.3.jpg',
+            '8.jpg': 'images/8.jpg',
+            '9.jpg': 'images/9.jpg',
+            '10.jpg': 'images/10.jpg'
+        };
+
+        // Descriptive alt text map for accessibility & SEO
+        const altText = {
+            '1.jpg': 'Broken ceramic plate fragment beginning of kintsugi story',
+            '2.jpg': 'Scattered pottery shards after shattering',
+            '2.1.jpg': 'Close-up texture of fractured ceramic surface',
+            '3.1.jpg': 'Tools prepared for kintsugi repair process',
+            '4.jpg': 'Applying gold adhesive to ceramic crack',
+            '5.jpg': 'Hands holding piece during careful restoration',
+            '6.jpg': 'Reassembled plate showing early gold seams',
+            '7.jpg': 'Light shining through repaired golden cracks',
+            '7.1.jpg': 'Plate glowing with completed gold inlay',
+            '7.3.jpg': 'Inscribed surface conveying resilience message',
+            '8.jpg': 'Transformed artifact symbolizing inner light',
+            '9.jpg': 'Metaphorical image of healing and resilience',
+            '10.jpg': 'Finished kintsugi plate used as hero background'
         };
 
         const storyStages = [
@@ -219,12 +277,19 @@
         const App = () => {
             const [activeImage, setActiveImage] = useState(null);
             const [scrolled, setScrolled] = useState(false);
+            const heroRef = useRef(null);
 
             useEffect(() => {
                 const handleScroll = () => {
-                    setScrolled(window.scrollY > 50);
+                    const y = window.scrollY;
+                    setScrolled(y > 50);
+                    // Parallax effect for hero image
+                    if (heroRef.current) {
+                        const factor = Math.min(y / 3, 220); // clamp for performance
+                        heroRef.current.style.transform = `translate3d(0, ${factor * 0.2}px, 0) scale(1.02)`;
+                    }
                 };
-                window.addEventListener('scroll', handleScroll);
+                window.addEventListener('scroll', handleScroll, { passive: true });
                 return () => window.removeEventListener('scroll', handleScroll);
             }, []);
 
@@ -246,8 +311,9 @@
                                 >
                                     <img 
                                         src={img} 
-                                        alt="Broken piece" 
-                                        className="w-48 md:w-64 rounded-sm shadow-xl border border-white/10"
+                                        loading="lazy"
+                                        alt={altText[img.split('/').pop()] || 'Kintsugi piece'} 
+                                        className="w-40 md:w-56 lg:w-64 rounded-sm img-shadow-base img-border-gold magic-shimmer"
                                         onError={(e) => {e.target.style.display='none'; e.target.parentElement.innerHTML = `<div class='text-red-500 text-xs p-2 bg-black'>Image not found</div>`}}
                                     />
                                 </div>
@@ -261,7 +327,7 @@
                         <div className="grid grid-cols-2 gap-4">
                             {stage.images.map((img, idx) => (
                                 <div key={idx} className="overflow-hidden rounded-lg cursor-pointer image-card" onClick={() => setActiveImage(img)}>
-                                    <img src={img} className="w-full h-48 object-cover opacity-80 hover:opacity-100 transition" alt="Process" />
+                                    <img src={img} loading="lazy" className="w-full h-56 md:h-48 object-cover opacity-85 hover:opacity-100 transition img-shadow-base img-border-gold magic-shimmer aspect-landscape" alt={altText[img.split('/').pop()] || 'Kintsugi process'} />
                                 </div>
                             ))}
                         </div>
@@ -273,7 +339,7 @@
                         <div className="flex justify-center gap-6 flex-wrap">
                             {stage.images.map((img, idx) => (
                                 <div key={idx} className="cursor-pointer image-card" onClick={() => setActiveImage(img)}>
-                                    <img src={img} className="max-w-full md:max-w-md rounded-lg shadow-2xl border border-gold/20" alt="Focus" />
+                                    <img src={img} loading="lazy" className="max-w-full md:max-w-md rounded-lg img-shadow-base img-border-gold magic-shimmer aspect-landscape" alt={altText[img.split('/').pop()] || 'Kintsugi focus'} />
                                 </div>
                             ))}
                         </div>
@@ -299,13 +365,13 @@
 
                     {/* Hero Section */}
                     <header className="relative h-screen flex items-center justify-center overflow-hidden">
-                        <div className="absolute inset-0 z-0">
-                            <img src={images['10.jpg']} className="w-full h-full object-cover opacity-60" alt="Hero Background" />
+                        <div className="absolute inset-0 z-0 hero-bg-wrapper" ref={heroRef}>
+                            <img src={images['10.jpg']} className="w-full h-full object-cover opacity-60" alt={altText['10.jpg']} />
                             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-[#0f0f0f]"></div>
                         </div>
                         
                         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-20">
-                            <h2 className="text-gold uppercase tracking-[0.3em] text-sm md:text-base mb-4 animate-pulse">The Art of Healing</h2>
+                            <h2 className="text-gold uppercase tracking-[0.3em] text-sm md:text-base mb-4 gold-glow-breathe">The Art of Healing</h2>
                             <h1 className="font-serif text-5xl md:text-8xl text-white mb-8 gold-glow leading-tight">
                                 Leading Self
                             </h1>
